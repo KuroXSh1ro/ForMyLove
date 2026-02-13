@@ -390,7 +390,14 @@
               {/* STAGE 1: ENVELOPE */}
               {stage === 'envelope' && (
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: '16px' }}>
-                  <div className="envelope" style={{ cursor: 'pointer' }} onClick={() => setStage('letter')}>
+                  <div className="envelope" style={{ cursor: 'pointer' }} onClick={() => {
+                        const audio = document.getElementById("bg-music");
+                        if (audio) {
+                          audio.volume = 0.2;
+                          audio.play().catch(() => {});
+                        }
+                        setStage('letter');
+                      }}>
                     <svg width="300" height="200" viewBox="0 0 300 200" style={{ filter: 'drop-shadow(0 25px 25px rgb(0 0 0 / 0.15))', maxWidth: '300px', width: 'clamp(200px, 80vw, 300px)', height: 'auto' }}>
                       <rect x="20" y="40" width="260" height="140" fill="#fff" stroke="#ec4899" strokeWidth="3" rx="10"/>
                       <path d="M 20 40 L 150 120 L 280 40" fill="#fce7f3" stroke="#ec4899" strokeWidth="3"/>
