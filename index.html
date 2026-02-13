@@ -38,8 +38,8 @@
 <body>
     <div id="root"></div>
         
-    <audio id="bg-music" autoplay loop>
-      <source src="/ForMyLove/music/blue.mp3" type="audio/mpeg">
+    <audio id="bg-music" loop>
+      <source src="/music/blue.mp3" type="audio/mpeg">
     </audio>
 
     <script type="text/babel">
@@ -81,25 +81,33 @@
         }, [stage]);
 
 
-          useEffect(() => {
-            const audio = document.getElementById("bg-music");
-            if (!audio) return;
+         useEffect(() => {
+          const audio = document.getElementById("bg-music");
+          if (!audio) return;
 
+          const startMusic = () => {
             audio.volume = 0;
-            audio.play().catch(() => {});
+            audio.play().then(() => {
+              let vol = 0;
+              const fade = setInterval(() => {
+                if (vol < 0.2) {
+                  vol += 0.02;
+                  audio.volume = vol;
+                } else {
+                  clearInterval(fade);
+                }
+              }, 200);
+            }).catch(() => {});
 
-            let vol = 0;
-            const fade = setInterval(() => {
-              if (vol < 0.2) {
-                vol += 0.02;
-                audio.volume = vol;
-              } else {
-                clearInterval(fade);
-              }
-            }, 200);
+            document.removeEventListener("click", startMusic);
+            document.removeEventListener("touchstart", startMusic);
+          };
 
-          }, []);
-          
+          document.addEventListener("click", startMusic);
+          document.addEventListener("touchstart", startMusic);
+
+        }, []);
+
           useEffect(() => {
             if (stage === 'accepted') {
               const newHearts = Array.from({ length: 120 }, (_, i) => ({
