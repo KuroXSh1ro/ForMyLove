@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>💕 Valentine Confession 💕</title>
+
+    <link rel="icon" href="data:,">
+
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden !important;
+            position: fixed;
+            top: 0;
+            left: 0;
+        }
+        
+        #root {
+            width: 100%;
+            height: 100%;
+            overflow: hidden !important;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+        
+    <audio id="bg-music" autoplay loop>
+      <source src="/ForMyLove/music/blue.mp3" type="audio/mpeg">
+    </audio>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+
+
+        function ValentineConfession() {
+          const [stage, setStage] = useState('envelope');
+          const [noButtonPos, setNoButtonPos] = useState(null);
+          const [hearts, setHearts] = useState([]);
+          const noButtonRef = useRef(null);
+          const [scrollDone, setScrollDone] = useState(false);
+
+          
+        // useEffect(() => {
+        //   const audio = document.getElementById("bg-music");
+        //   if (!audio) return;
+
+        //   audio.volume = 0.3;
+        //   const playAudio = () => {
+        //     audio.play().catch(() => {});
+        //     document.removeEventListener("click", playAudio);
+        //   };
+
+        //   document.addEventListener("click", playAudio);
+        // }, []);
+
+        useEffect(() => {
+          if (stage === 'accepted') {
+            setScrollDone(false);
+
+            const timer = setTimeout(() => {
+              setScrollDone(true);
+            }, 18000); // bằng thời gian scrollUp
+
+            return () => clearTimeout(timer);
+          }
+        }, [stage]);
+
+
+          useEffect(() => {
+            const audio = document.getElementById("bg-music");
+            if (!audio) return;
+
+            audio.volume = 0;
+            audio.play().catch(() => {});
+
+            let vol = 0;
+            const fade = setInterval(() => {
+              if (vol < 0.2) {
+                vol += 0.02;
+                audio.volume = vol;
+              } else {
+                clearInterval(fade);
+              }
+            }, 200);
+
+          }, []);
+          
+          useEffect(() => {
+            if (stage === 'accepted') {
+              const newHearts = Array.from({ length: 120 }, (_, i) => ({
+                id: i,
+                left: Math.random() * 100,
+                delay: Math.random() * 2,
+                duration: 3 + Math.random() * 2,
+                size: 30 + Math.random() * 50,
+              }));
+              setHearts(newHearts);
+            }
+          }, [stage]);
+
+          const moveNoButton = () => {
+            const W = window.innerWidth;
+            const H = window.innerHeight;
+            
+            // Button size - responsive
+            const isMobile = W <= 480;
+            const BTN_W = isMobile ? 160 : 200;
+            const BTN_H = isMobile ? 50 : 56;
+            
+            // Get YES button position to calculate safe zones
+            const yesBtn = document.querySelector('.btn-yes');
+            const yesBtnRect = yesBtn ? yesBtn.getBoundingClientRect() : null;
+            
+            // Chia screen thành GRID 3x3, nút "Có" ở CENTER, nút "Không" có thể ở 8 vị trí còn lại
+            const cols = 3;
+            const rows = 3;
+            const cellW = W / cols;
+            const cellH = H / rows;
+            
+            // 8 vị trí AN TOÀN (không phải center)
+            const safePositions = [];
+            
+            for (let row = 0; row < rows; row++) {
+              for (let col = 0; col < cols; col++) {
+                // Bỏ qua ô giữa (center) - đó là nơi nút "Có" ở
+                if (row === 1 && col === 1) continue;
+                
+                // Tính vị trí trong cell
+                const margin = 40;
+                const x = col * cellW + margin;
+                const y = row * cellH + margin;
+                
+                // Đảm bảo button fit trong cell
+                const maxX = (col + 1) * cellW - BTN_W - margin;
+                const maxY = (row + 1) * cellH - BTN_H - margin;
+                
+                const finalX = Math.min(x, maxX);
+                const finalY = Math.min(y, maxY);
+                
+                // Kiểm tra không overlap với nút "Có"
+                let isValid = true;
+                if (yesBtnRect) {
+                  const noLeft = finalX;
+                  const noRight = finalX + BTN_W;
+                  const noTop = finalY;
+                  const noBottom = finalY + BTN_H;
+                  
+                  const yesLeft = yesBtnRect.left;
+                  const yesRight = yesBtnRect.right;
+                  const yesTop = yesBtnRect.top;
+                  const yesBottom = yesBtnRect.bottom;
+                  
+                  const padding = 50;
+                  
+                  // Check overlap
+                  const overlaps = !(
+                    noRight < yesLeft - padding ||
+                    noLeft > yesRight + padding ||
+                    noBottom < yesTop - padding ||
+                    noTop > yesBottom + padding
+                  );
+                  
+                  if (overlaps) {
+                    isValid = false;
+                  }
+                }
+                
+                if (isValid && finalX >= 0 && finalY >= 0 && finalX + BTN_W <= W && finalY + BTN_H <= H) {
+                  safePositions.push({ x: finalX, y: finalY });
+                }
+              }
+            }
+            
+            // Chọn random 1 vị trí an toàn
+            if (safePositions.length > 0) {
+              const randomPos = safePositions[Math.floor(Math.random() * safePositions.length)];
+              setNoButtonPos(randomPos);
+            }
+          };
+
+          const handlePointerMove = (e) => {
+            if (!noButtonRef.current) return;
+            
+            const noBtn = noButtonRef.current;
+            const rect = noBtn.getBoundingClientRect();
+            
+            // Lấy vị trí pointer (mouse hoặc touch)
+            const pointerX = e.clientX || (e.touches && e.touches[0]?.clientX) || 0;
+            const pointerY = e.clientY || (e.touches && e.touches[0]?.clientY) || 0;
+            
+            if (pointerX === 0 && pointerY === 0) return;
+            
+            // Tính tâm của button
+            const btnCenterX = rect.left + rect.width / 2;
+            const btnCenterY = rect.top + rect.height / 2;
+            
+            // Tính khoảng cách từ pointer đến tâm button
+            const distance = Math.sqrt(
+              Math.pow(pointerX - btnCenterX, 2) + 
+              Math.pow(pointerY - btnCenterY, 2)
+            );
+            
+            // Nếu pointer gần button < 120px → Button chạy!
+            const threshold = 120;
+            if (distance < threshold) {
+              moveNoButton();
+            }
+          };
+
+          return (
+            <div style={{ 
+              width: '100vw', 
+              height: '100vh',
+              overflow: 'hidden',
+              position: 'relative',
+              background: 'linear-gradient(to bottom right, rgb(254, 242, 242), rgb(254, 226, 226), rgb(254, 202, 202))'
+            }}>
+              <style>{`
+                @import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;700&family=Playfair+Display:wght@400;700&family=Poppins:wght@300;400;600&display=swap');
+
+                @keyframes float {
+                  0%, 100% { transform: translateY(0px) rotate(0deg); }
+                  50% { transform: translateY(-20px) rotate(5deg); }
+                }
+
+                @keyframes birdFly {
+                  0% { transform: translateY(0) translateX(0); opacity: 0; }
+                  20% { opacity: 1; }
+                  100% { transform: translateY(-120vh) translateX(50px); opacity: 0; }
+                }
+
+                @keyframes fadeIn {
+                  from { opacity: 0; transform: translateY(20px); }
+                  to { opacity: 1; transform: translateY(0); }
+                }
+
+                @keyframes scaleIn {
+                  from { transform: scale(0); opacity: 0; }
+                  to { transform: scale(1); opacity: 1; }
+                }
+
+                @keyframes riseUp {
+                  0% {
+                    opacity: 0;
+                    transform: translateY(40px);
+                  }
+                  100% {
+                    opacity: 1;
+                    transform: translateY(0);
+                  }
+                }
+
+
+                @keyframes heartFloat {
+                  0% {
+                    transform: translateY(120vh) translateX(0px) scale(0.5) rotate(0deg);
+                    opacity: 0;
+                  }
+                  10% {
+                    opacity: 1;
+                  }
+                  50% {
+                    transform: translateY(40vh) translateX(60px) scale(1.2) rotate(180deg);
+                  }
+                  100% {
+                    transform: translateY(-120vh) translateX(-80px) scale(0.8) rotate(360deg);
+                    opacity: 0;
+                  }
+                }
+
+                @keyframes pulse {
+                  0%, 100% { transform: scale(1); }
+                  50% { transform: scale(1.05); }
+                }
+
+                @keyframes shimmer {
+                  0% { background-position: -1000px 0; }
+                  100% { background-position: 1000px 0; }
+                }
+                
+                @keyframes scrollUp {
+                  0% {
+                    transform: translateY(100%);
+                  }
+                  100% {
+                    transform: translateY(-100%);
+                  }
+                }
+
+                @keyframes hideScroll {
+                  to {
+                    opacity: 0;
+                    height: 0;
+                    margin: 0;
+                  }
+                }
+
+                @keyframes removeOverflow {
+                  to {
+                    overflow: visible;
+                  }
+                }
+
+                .scroll-container {
+                  animation: removeOverflow 0.1s linear 18.2s forwards;
+                }
+
+                .scroll-content {
+                  animation: scrollUp 18s linear forwards;
+                }
+
+                .envelope { animation: float 3s ease-in-out infinite; }
+                .bird { animation: birdFly 4s ease-in forwards; }
+                .letter-content { animation: fadeIn 1s ease-out forwards; }
+                .question-container { animation: scaleIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards; }
+                .heart-float { animation: heartFloat linear forwards; }
+                .btn-yes { animation: pulse 2s ease-in-out infinite; }
+
+                .shimmer-text {
+                  background: linear-gradient(90deg, #ec4899 0%, #f43f5e 50%, #ec4899 100%);
+                  background-size: 1000px 100%;
+                  -webkit-background-clip: text;
+                  background-clip: text;
+                  -webkit-text-fill-color: transparent;
+                  animation: shimmer 3s linear infinite;
+                }
+
+                .glass-card {
+                  background: rgba(255, 255, 255, 0.7);
+                  backdrop-filter: blur(10px);
+                  border: 1px solid rgba(255, 255, 255, 0.8);
+                }
+
+                @media (max-width: 768px) {
+                  .glass-card { padding: 1.5rem !important; margin: 1rem !important; }
+                }
+
+                @media (max-width: 480px) {
+                  .btn-yes, .btn-no {
+                    width: 160px !important;
+                    height: 50px !important;
+                    font-size: 1.1rem !important;
+                  }
+                }
+              `}</style>
+
+              {/* Background decorative hearts */}
+              <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', opacity: 0.2 }}>
+                {[...Array(15)].map((_, i) => (
+                  <div
+                    key={i}
+                    style={{
+                      position: 'absolute',
+                      left: `${Math.random() * 100}%`,
+                      top: `${Math.random() * 100}%`,
+                      fontSize: `${20 + Math.random() * 40}px`,
+                      color: '#fbcfe8',
+                      animation: `float ${3 + Math.random() * 2}s ease-in-out infinite`,
+                      animationDelay: `${Math.random() * 2}s`,
+                    }}
+                  >
+                    ♥
+                  </div>
+                ))}
+              </div>
+
+              {/* STAGE 1: ENVELOPE */}
+              {stage === 'envelope' && (
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: '16px' }}>
+                  <div className="envelope" style={{ cursor: 'pointer' }} onClick={() => setStage('letter')}>
+                    <svg width="300" height="200" viewBox="0 0 300 200" style={{ filter: 'drop-shadow(0 25px 25px rgb(0 0 0 / 0.15))', maxWidth: '300px', width: 'clamp(200px, 80vw, 300px)', height: 'auto' }}>
+                      <rect x="20" y="40" width="260" height="140" fill="#fff" stroke="#ec4899" strokeWidth="3" rx="10"/>
+                      <path d="M 20 40 L 150 120 L 280 40" fill="#fce7f3" stroke="#ec4899" strokeWidth="3"/>
+                      <path d="M 20 40 L 150 120 L 280 40 L 280 180 L 20 180 Z" fill="none" stroke="#ec4899" strokeWidth="3"/>
+                      <circle cx="150" cy="100" r="25" fill="#f43f5e"/>
+                      <text x="150" y="110" textAnchor="middle" fill="white" fontSize="24">♥</text>
+                    </svg>
+                    <div style={{ textAlign: 'center', marginTop: '24px' }}>
+                      <p style={{ fontSize: '1.5rem', fontFamily: 'Dancing Script, cursive', color: '#db2777', marginBottom: '8px' }}>Click để mở lá thư</p>
+                      <p style={{ fontSize: '0.875rem', color: '#f9a8d4', fontFamily: 'Poppins, sans-serif' }}>💌</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* STAGE 2: LETTER WITH FLYING BIRDS */}
+              {stage === 'letter' && (
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: '16px', position: 'relative' }}>
+                  {[...Array(5)].map((_, i) => (
+                    <div
+                      key={i}
+                      className="bird"
+                      style={{
+                        position: 'absolute',
+                        left: `${20 + i * 15}%`,
+                        top: '60%',
+                        fontSize: 'clamp(1.8rem, 5vw, 3rem)',
+                        animationDelay: `${i * 0.3}s`,
+                      }}
+                    >
+                      🕊️
+                    </div>
+                  ))}
+
+                  <div className="letter-content glass-card" style={{ borderRadius: '24px', padding: 'clamp(20px, 5vw, 48px)', maxWidth: 'min(90vw, 672px)', boxShadow: '0 25px 50px -12px rgb(0 0 0 / 0.25)', width: '100%', margin: '16px' }}>
+                    <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+                      <h1 style={{ fontSize: 'clamp(1.8rem, 5vw, 3rem)', fontFamily: 'Playfair Display, serif', color: '#e11d48', marginBottom: '16px' }}>
+                        Gửi bạn Thư yêu dấu 💕
+                      </h1>
+                      <div style={{ width: '128px', height: '4px', background: 'linear-gradient(to right, #f9a8d4, #fb7185)', margin: '0 auto', borderRadius: '9999px' }}></div>
+                    </div>
+
+                    <div style={{ fontFamily: 'Poppins, sans-serif', color: '#374151', fontSize: 'clamp(0.875rem, 3vw, 1.125rem)', lineHeight: '1.75' }}>
+                      <p style={{ opacity: 0, animation: 'fadeIn 1s ease-out 0.5s forwards', marginBottom: '24px' }}>
+                        Trong vô vàn ngày tháng trôi qua, bố nhận ra rằng con là người đặc biệt nhất đã bước vào cuộc đời anh...
+                      </p>
+                      
+                      <p style={{ opacity: 0, animation: 'fadeIn 1s ease-out 1s forwards', marginBottom: '24px' }}>
+                        Nụ cười của con như ánh nắng ban mai, xua tan mọi u buồn. Tiếng cười của con như giai điệu ngọt ngào nhất mà bố từng được nghe...
+                      </p>
+                      
+                      <p style={{ opacity: 0, animation: 'fadeIn 1s ease-out 1.5s forwards', marginBottom: '24px' }}>
+                        Mỗi khoảnh khắc bên con đều trở thành kỷ niệm đẹp đẽ mà bố muốn giữ mãi. Con làm cuộc sống của bố tươi đẹp và ý nghĩa hơn rất nhiều...
+                      </p>
+                      
+                      <p style={{ opacity: 0, animation: 'fadeIn 1s ease-out 2s forwards', textAlign: 'center', fontWeight: 'bold', color: '#e11d48' }}>
+                        Vào ngày Valentine này, bố muốn hỏi con một câu... 💝
+                      </p>
+                    </div>
+
+                    <div style={{ textAlign: 'center', marginTop: '40px', opacity: 0, animation: 'fadeIn 1s ease-out 2.5s forwards' }}>
+                      <button
+                        onClick={() => setStage('question')}
+                        style={{
+                          background: 'linear-gradient(to right, #ec4899, #f43f5e)',
+                          color: 'white',
+                          padding: '12px 48px',
+                          borderRadius: '9999px',
+                          fontSize: 'clamp(1rem, 4vw, 1.25rem)',
+                          fontWeight: '600',
+                          boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)',
+                          border: 'none',
+                          cursor: 'pointer',
+                          fontFamily: 'Poppins, sans-serif',
+                          transition: 'all 0.3s'
+                        }}
+                        onMouseOver={(e) => {
+                          e.target.style.transform = 'scale(1.05)';
+                          e.target.style.boxShadow = '0 20px 25px -5px rgb(0 0 0 / 0.1)';
+                        }}
+                        onMouseOut={(e) => {
+                          e.target.style.transform = 'scale(1)';
+                          e.target.style.boxShadow = '0 10px 15px -3px rgb(0 0 0 / 0.1)';
+                        }}
+                      >
+                        Tiếp tục ➜
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* STAGE 3: THE QUESTION */}
+              {stage === 'question' && (
+                <div 
+                  onMouseMove={handlePointerMove}
+                  onTouchMove={handlePointerMove}
+                  style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center', 
+                    minHeight: '100vh', 
+                    padding: '16px',
+                    position: 'relative'
+                  }}
+                >
+                  <div className="question-container glass-card" style={{ borderRadius: '24px', padding: 'clamp(24px, 5vw, 64px)', maxWidth: 'min(90vw, 576px)', boxShadow: '0 25px 50px -12px rgb(0 0 0 / 0.25)', textAlign: 'center', width: '100%', margin: '16px', position: 'relative', zIndex: 1 }}>
+                    <div style={{ marginBottom: '48px' }}>
+                      <div style={{ fontSize: 'clamp(2.5rem, 8vw, 5rem)', marginBottom: '24px', animation: 'pulse 2s ease-in-out infinite' }}>💖</div>
+                      <h2 className="shimmer-text" style={{ fontSize: 'clamp(1.8rem, 5vw, 3rem)', fontFamily: 'Playfair Display, serif', color: '#e11d48', marginBottom: '24px' }}>
+                        Will you be my Valentine?
+                      </h2>
+                      <p style={{ fontSize: 'clamp(1.2rem, 4vw, 1.5rem)', fontFamily: 'Dancing Script, cursive', color: '#ec4899' }}>
+                        Con có muốn là Valentine của bố không? 🌹
+                      </p>
+                    </div>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', alignItems: 'center', position: 'relative', minHeight: '140px' }}>
+                      {/* YES button */}
+                      <button
+                        onClick={() => setStage('accepted')}
+                        className="btn-yes"
+                        style={{
+                          background: 'linear-gradient(to right, #ec4899, #f43f5e)',
+                          color: 'white',
+                          padding: '14px',
+                          borderRadius: '9999px',
+                          fontSize: 'clamp(1.1rem, 4vw, 1.5rem)',
+                          fontWeight: 'bold',
+                          boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)',
+                          border: 'none',
+                          cursor: 'pointer',
+                          fontFamily: 'Poppins, sans-serif',
+                          transition: 'all 0.3s',
+                          width: '200px',
+                          height: '56px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          boxSizing: 'border-box',
+                          position: 'relative',
+                          zIndex: 10
+                        }}
+                        onMouseOver={(e) => {
+                          e.target.style.transform = 'scale(1.1)';
+                          e.target.style.boxShadow = '0 20px 25px -5px rgb(0 0 0 / 0.1)';
+                        }}
+                        onMouseOut={(e) => {
+                          e.target.style.transform = 'scale(1)';
+                          e.target.style.boxShadow = '0 10px 15px -3px rgb(0 0 0 / 0.1)';
+                        }}
+                      >
+                        Có ❤️
+                      </button>
+
+                      {/* NO button - RUNS AWAY from pointer */}
+                      <button
+                        ref={noButtonRef}
+                        className="btn-no"
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          background: '#d1d5db',
+                          color: '#4b5563',
+                          padding: '14px',
+                          borderRadius: '9999px',
+                          fontSize: 'clamp(1.1rem, 4vw, 1.5rem)',
+                          fontWeight: 'bold',
+                          boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)',
+                          border: 'none',
+                          cursor: 'pointer',
+                          fontFamily: 'Poppins, sans-serif',
+                          transition: 'left 0.3s ease, top 0.3s ease',
+                          width: '200px',
+                          height: '56px',
+                          position: noButtonPos ? 'fixed' : 'relative',
+                          left: noButtonPos ? `${noButtonPos.x}px` : 'auto',
+                          top: noButtonPos ? `${noButtonPos.y}px` : 'auto',
+                          zIndex: 9999,
+                          boxSizing: 'border-box',
+                          pointerEvents: 'auto'
+                        }}
+                      >
+                        Không
+                      </button>
+                    </div>
+
+                    <p style={{ fontSize: 'clamp(0.75rem, 2.5vw, 0.875rem)', color: '#f9a8d4', marginTop: '32px', fontFamily: 'Poppins, sans-serif', fontStyle: 'italic' }}>
+                      (Gợi ý: Nút "Không" rất nhút nhát, sợ bị ấn lắm! 😊)
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* STAGE 4: ACCEPTED */}
+              {stage === 'accepted' && (
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: '16px', position: 'relative' }}>
+                  {hearts.map((heart) => (
+                    <div
+                      key={heart.id}
+                      className="heart-float"
+                      style={{
+                        filter: 'drop-shadow(0 0 10px rgba(255,0,100,0.7))',
+                        position: 'absolute',
+                        left: `${heart.left}%`,
+                        fontSize: `${heart.size}px`,
+                        color: Math.random() > 0.5 ? '#ff2e63' : '#ff6b81',
+                        animationDelay: `${heart.delay}s`,
+                        animationDuration: `${heart.duration}s`,
+                        pointerEvents: 'none'
+                      }}
+                    >
+                      ♥
+                    </div>
+                  ))}
+
+                  <div className="question-container glass-card" style={{ borderRadius: '24px', padding: 'clamp(24px, 5vw, 64px)', maxWidth: 'min(90vw, 768px)', boxShadow: '0 25px 50px -12px rgb(0 0 0 / 0.25)', textAlign: 'center', zIndex: 10, width: '100%', margin: '16px' }}>
+                    <div style={{ fontSize: 'clamp(3rem, 10vw, 6rem)', marginBottom: '32px', animation: 'scaleIn 0.5s ease-out, pulse 2s ease-in-out 0.5s infinite' }}>🎉</div>
+                    
+                    <h2 className="shimmer-text" style={{ fontSize: 'clamp(2rem, 6vw, 4rem)', fontFamily: 'Playfair Display, serif', color: '#e11d48', marginBottom: '24px' }}>
+                      Yayyy! 💕
+                    </h2>
+                    
+                    <p style={{ fontSize: 'clamp(1.5rem, 5vw, 2rem)', fontFamily: 'Dancing Script, cursive', color: '#ec4899', marginBottom: '32px' }}>
+                      Bố biết mà! Con sẽ nói có thôi! 🥰
+                    </p>
+                    
+                    <div style={{ fontFamily: 'Poppins, sans-serif', fontSize: 'clamp(1rem, 3.5vw, 1.25rem)', color: '#374151' ,  overflow: scrollDone ? 'visible' : 'hidden', position: 'relative' , transition: 'all 0.5s ease'}}>
+                      {!scrollDone && (
+                          <div className="scroll-content">
+                            <p>Bố muốn nói với con rằng: "Con là người đặc biệt nhất trong đời bố 👦🏻"</p>
+                            <p>Bố yêu con nhiều lắm, hơn tất cả những gì bố có thể diễn tả bằng lời ❤️</p>
+                            <p>Bố hứa sẽ luôn yêu thương và trân trọng con ❤️</p>
+                            <p>Cảm ơn con đã làm cho cuộc sống của bố trở nên tươi đẹp 🌈</p>
+                            <p>Bố sẽ luôn ở đây, bên con 🌍</p>
+                            <p>Bố hy vọng chúng ta sẽ có thật nhiều kỷ niệm đẹp 🌟</p>
+                            <p>Con là món quà tuyệt vời nhất 🎁</p>
+                            <p>Bố yêu con hơn tất cả những vì sao ✨</p>
+                          </div>
+                        )}
+
+                        {scrollDone && (
+                          <>
+                            <p
+                              style={{
+                                opacity: 0,
+                                animation: 'riseUp 1.2s ease-out forwards',
+                                marginBottom: '16px'
+                              }}
+                            >
+                              Cảm ơn con đã đồng ý là Valentine của bố 🌹
+                            </p>
+
+                            <p
+                              style={{
+                                opacity: 0,
+                                animation: 'riseUp 1.2s ease-out 0.5s forwards'
+                              }}
+                            >
+                              Happy Valentine's Day, my love! 💝
+                            </p>
+                          </>
+                        )}     
+                    </div>
+
+                    <div style={{ marginTop: '48px', opacity: 0, animation: 'fadeIn 1s ease-out 2s forwards' }}>
+                      <div style={{ fontSize: 'clamp(2rem, 6vw, 4rem)', marginBottom: '16px', animation: 'pulse 1.5s infinite' }}>👦💐❤️</div>
+                      <p style={{ fontSize: 'clamp(1.2rem, 4vw, 1.5rem)', fontFamily: 'Dancing Script, cursive', color: '#f43f5e' }}>
+                        Forever & Always 💕
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<ValentineConfession />);
+    </script>
+</body>
+</html>
